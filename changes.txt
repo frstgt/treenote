@@ -1,0 +1,44 @@
+20190105:
+  # 不具合
+  - New, Open, Close, Quit, 終了ボタンのデバッグ。
+    編集中の場合、保存確認する。YESで元の処理に戻る。NOなら処理続行。
+    YESで保存する処理も考えたが、CANCELが必要になり処理煩雑なので没にした。
+  - OpenDialog, SaveDialogでフィルタが機能してなかった点の修正。
+    パターン"*.tnf"と同時にmime-type"text/plain"を設定してたのがまずかった。
+
+20190102:
+  # 不具合
+  - そもそも起動しなかった点を修正。
+    AppWinとAppの__init__中のsuper呼び出しに引数追加。
+    Pythonの仕様変更のため。
+  - 起動時にwarningが出る点を修正。
+    APP_MENUの定義でadd_after, add_before, add_child, deleteの
+    accelの定義を削除。
+  - add_after, add_before, add_child, deleteのショートカットが効かない点を修正。
+    self.treeviewのkey-press-eventにて処理。
+  - 編集中にNew, Open, Close, Quitを実行した場合、
+    保存するか確認する処理の実装と確認が不十分であった点を修正。
+    処理を全面的に見直した。
+  - 行のDrag&Dropが変更と認識されない点を修正。
+    TnViewのself.treestoreにrow_changed, row_inserted, row_deleted
+    のシグナルの処理を追加。
+    なお、rows_reorderedのシグナルは機能していない模様。
+  - 編集中に終了ボタンを押した場合、保存を確認する処理が漏れていた点を修正。
+    AppWindowのdelete-eventに処理を追加。
+    Gtk.Widgetのdestroyイベントで処理すべきではないとの注記があったのに、
+    どこで処理すべきかの記述がなく、多分これだろうと思われるイベント。
+  - 編集中の内容を保存できない点を修正。
+    Pythonの文字列が全面的にUnicodeに移行したことと、
+    JSONモジュールに問題あり、dumps()がutf-8をstrとして返していたため。
+    unicode(dumps())として返り値を強制的にutf-8として扱うことで対策。
+
+  # 改善
+  - git導入。.gitignoreに*.pycを登録。
+  - 行末のを削除。
+  - APP_NAME, FILE_FORMATなどの定義をTnDef.pyにまとめた。
+  - self.treeviewで、tree_linesを有効にした。
+  - TnViewの引数からdebugを削除。併せて関連処理も削除。
+  - 意味がないのでmakefile削除。
+  - README.mdを若干改善。
+
+# end of file

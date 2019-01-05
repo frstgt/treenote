@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import sys
+import sys, io
 
 import gi
 gi.require_version('Gtk', '3.0')
@@ -8,12 +8,7 @@ from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 
 import json, re
 
-
-FILE_FORMAT = "<TNF v0.1>"
-FILE_PATTERN = "*.tnf"
-
-OK = 0
-CANCEL = -1
+import TnDef
 
 class TnFile:
 
@@ -22,74 +17,60 @@ class TnFile:
     self.filename = None
     self.treestore = treestore
 
+  def get_filename(self):
+    return self.filename
+
 
   def new_file(self):
     self.filename = None
     self.treestore.clear()
 
   def open_file(self):
-    filename = self.open_dialog()
-    if filename != None:
+    response, filename = self.open_file_dialog()
+    if response == Gtk.ResponseType.OK:
       self.filename = filename
+      self.treestore.clear()
       self.load_store_from_file()
+    return response
 
   def save_file(self):
+    response = Gtk.ResponseType.CANCEL
     if self.filename == None:
-      self.filename = self.save_dialog()
-
-    if self.filename != None:
+      response, self.filename = self.save_file_dialog()
+    if response == Gtk.ResponseType.OK:
       self.save_store_to_file()
-      return OK
-    else:
-      return CANCEL
+    return response
 
   def save_file_as(self):
-    filename = self.save_dialog()
-    if filename != None:
+    response, filename = self.save_file_dialog()
+    if response == Gtk.ResponseType.OK:
       self.filename = filename
       self.save_store_to_file()
-      return OK
-    else:
-      return CANCEL
+    return response
 
   def close_file(self):
     self.new_file()
 
 
-  def get_filename(self):
-    return self.filename
+  def save_changes_dialog(self): # return YES/NO
 
-
-  def changed_dialog(self, message):
-    message = "There are some changes.\n Would you like to save it?"
-    dialog = Gtk.MessageDialog(self.parent_window,
-                               Gtk.DialogFlags.MODAL,
-                               Gtk.MessageType.QUESTION,
-                               Gtk.ButtonsType.YES_NO,
-                               message)
+    message = "Would you like to save your changes?"
+    dialog = Gtk.MessageDialog(self.parent_window, 0,
+      Gtk.MessageType.QUESTION,
+      Gtk.ButtonsType.YES_NO, message)
     response = dialog.run()
     dialog.destroy()
 
-    if response == Gtk.ResponseType.YES:
-      ret = self.save_file()
-      if ret == CANCEL:
-        return CANCEL
-    elif response == Gtk.ResponseType.NO:
-      pass
-    else:
-      return CANCEL
-
-    return OK
+    return response
 
   def get_filter(self):
     filter = Gtk.FileFilter()
-    filter.set_name("Text files")
-    filter.add_mime_type("text/plain")
-    filter.add_pattern(FILE_PATTERN)
+    filter.set_name(TnDef.FILE_FORMAT)
+    filter.add_pattern(TnDef.FILE_PATTERN)
     return filter
 
-  def open_dialog(self):
-    dialog = Gtk.FileChooserDialog("Open File", self.parent_window,
+  def open_file_dialog(self): # return OK/CANCEL
+    dialog = Gtk.FileChooserDialog('Open File', self.parent_window,
                                    Gtk.FileChooserAction.OPEN,
                                    (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                                     Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -102,10 +83,10 @@ class TnFile:
       filename = dialog.get_filename()
     dialog.destroy()
 
-    return filename
+    return [response, filename]
 
-  def save_dialog(self):
-    dialog = Gtk.FileChooserDialog("Save File", self.parent_window,
+  def save_file_dialog(self): # return OK/CANCEL
+    dialog = Gtk.FileChooserDialog('Save File', self.parent_window,
                                    Gtk.FileChooserAction.SAVE,
                                    (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                                     Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
@@ -119,23 +100,27 @@ class TnFile:
       filename = dialog.get_filename()
     dialog.destroy()
 
-    return filename
+    return [response, filename]
 
 
   def save_store_to_file(self):
 
     data = self.copy_data_from_store();
 
-    f = open(self.filename, "w", encoding="UTF-8")
-    f.write(FILE_FORMAT + "\n")
-    json.dump(data, f)
+    f = io.open(self.filename, 'w', encoding='utf-8')
+    f.write(TnDef.FILE_HEADER + "\n")
+
+    # json.dumps return utf-8 as str. it is a bug.
+    dump_utf8 = unicode(json.dumps(data, encoding='utf-8'))
+    f.write(dump_utf8)
+
     f.close
 
   def load_store_from_file(self):
 
-    f = open(self.filename, "r", encoding="UTF-8")
+    f = io.open(self.filename, 'r', encoding='utf-8')
     first_line = f.readline().rstrip()
-    if first_line != FILE_FORMAT:
+    if first_line != TnDef.FILE_HEADER:
       return
     data = json.load(f)
     f.close

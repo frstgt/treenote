@@ -6,95 +6,105 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 
-import TnView, TnFile
-
-
-APP_NAME = "TreeNote v0.1"
+import TnView, TnFile, TnDef
 
 # This would typically be its own file
 MENU_XML="""
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <menu id="app-menu">
-    <section>
-      <item>
-        <attribute name="action">win.new</attribute>
-        <attribute name="label" translatable="yes">_New</attribute>
-        <attribute name="accel">&lt;Primary&gt;n</attribute>
-      </item>
-      <item>
-        <attribute name="action">win.open</attribute>
-        <attribute name="label" translatable="yes">_Open</attribute>
-        <attribute name="accel">&lt;Primary&gt;o</attribute>
-      </item>
-      <item>
-        <attribute name="action">win.save</attribute>
-        <attribute name="label" translatable="yes">_Save</attribute>
-        <attribute name="accel">&lt;Primary&gt;s</attribute>
-      </item>
-      <item>
-        <attribute name="action">win.save_as</attribute>
-        <attribute name="label" translatable="yes">Save As</attribute>
-      </item>
-      <item>
-        <attribute name="action">win.close</attribute>
-        <attribute name="label" translatable="yes">Close</attribute>
-      </item>
-    </section>
-    <section>
-      <item>
-        <attribute name="action">win.add_after</attribute>
-        <attribute name="label" translatable="yes">Add _After</attribute>
-        <attribute name="accel">&lt;Primary&gt;a</attribute>
-      </item>
-      <item>
-        <attribute name="action">win.add_before</attribute>
-        <attribute name="label" translatable="yes">Add _Before</attribute>
-        <attribute name="accel">&lt;Primary&gt;b</attribute>
-      </item>
-      <item>
-        <attribute name="action">win.add_child</attribute>
-        <attribute name="label" translatable="yes">Add _Child</attribute>
-        <attribute name="accel">&lt;Primary&gt;c</attribute>
-      </item>
-      <item>
-        <attribute name="action">win.delete</attribute>
-        <attribute name="label" translatable="yes">_Delete</attribute>
-        <attribute name="accel">&lt;Primary&gt;d</attribute>
-      </item>
-    </section>
-    <section>
-      <item>
-        <attribute name="action">win.expand_all</attribute>
-        <attribute name="label" translatable="yes">Expand All</attribute>
-      </item>
-      <item>
-        <attribute name="action">win.fold_all</attribute>
-        <attribute name="label" translatable="yes">Fold All</attribute>
-      </item>
-    </section>
-    <section>
-      <item>
-        <attribute name="action">app.quit</attribute>
-        <attribute name="label" translatable="yes">_Quit</attribute>
-        <attribute name="accel">&lt;Primary&gt;q</attribute>
-      </item>
-    </section>
+    <submenu>
+      <attribute name="label" translatable="yes">File</attribute>
+      <section>
+        <item>
+          <attribute name="action">win.new</attribute>
+          <attribute name="label" translatable="yes">_New</attribute>
+          <attribute name="accel">&lt;Primary&gt;n</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.open</attribute>
+          <attribute name="label" translatable="yes">_Open</attribute>
+          <attribute name="accel">&lt;Primary&gt;o</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.save</attribute>
+          <attribute name="label" translatable="yes">_Save</attribute>
+          <attribute name="accel">&lt;Primary&gt;s</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.save_as</attribute>
+          <attribute name="label" translatable="yes">Save As</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.close</attribute>
+          <attribute name="label" translatable="yes">Close</attribute>
+        </item>
+      </section>
+      <section>
+        <item>
+          <attribute name="action">app.quit</attribute>
+          <attribute name="label" translatable="yes">_Quit</attribute>
+          <attribute name="accel">&lt;Primary&gt;q</attribute>
+        </item>
+      </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">Edit</attribute>
+      <section>
+        <item>
+          <attribute name="action">win.add_after</attribute>
+          <attribute name="label" translatable="yes">Add _After</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.add_before</attribute>
+          <attribute name="label" translatable="yes">Add _Before</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.add_child</attribute>
+          <attribute name="label" translatable="yes">Add _Child</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.delete</attribute>
+          <attribute name="label" translatable="yes">_Delete</attribute>
+        </item>
+      </section>
+    </submenu>
+    <submenu>
+      <attribute name="label" translatable="yes">View</attribute>
+      <section>
+        <item>
+          <attribute name="action">win.expand_all</attribute>
+          <attribute name="label" translatable="yes">Expand All</attribute>
+        </item>
+        <item>
+          <attribute name="action">win.fold_all</attribute>
+          <attribute name="label" translatable="yes">Fold All</attribute>
+        </item>
+      </section>
+    </submenu>
   </menu>
 </interface>
 """
 
-def win_action_setting(win):
-  pass
-def app_action_setting(app):
-  pass
-
 class AppWin(Gtk.ApplicationWindow):
 
   def __init__(self, *args, **kwargs):
-    super().__init__(*args, **kwargs)
+    super(AppWin, self).__init__(*args, **kwargs)
 
     self.set_default_size(640, 480)
+
+    self.scrolledwin = Gtk.ScrolledWindow()
+    self.tnview = TnView.TnView(parent_window=self)
+    self.tnfile = TnFile.TnFile(parent_window=self,
+                                treestore=self.tnview.get_store())
+
+    self.scrolledwin.add(self.tnview.get_widget())
+    self.add(self.scrolledwin)
+
+    self.scrolledwin.show()
+    self.tnview.get_widget().show()
+
+    #
 
     action = Gio.SimpleAction.new("new", None)
     action.connect("activate", self.on_new)
@@ -140,58 +150,48 @@ class AppWin(Gtk.ApplicationWindow):
     action.connect("activate", self.on_fold_all)
     self.add_action(action)
 
-    self.scrolledwin = Gtk.ScrolledWindow()
-    self.tnview = TnView.TnView(parent_window=self, debug=False)
-    self.tnfile = TnFile.TnFile(parent_window=self,
-                                treestore=self.tnview.get_store())
+    #
 
-    self.scrolledwin.add(self.tnview.get_widget())
-    self.add(self.scrolledwin)
-
-    self.scrolledwin.show()
-    self.tnview.get_widget().show()
+  def save_changes(self):
+    res = Gtk.ResponseType.NO
+    if self.tnview.get_changed() == True:
+      res = self.tnfile.save_changes_dialog()
+    return res
 
   def on_new(self, action, param):
     if self.tnview.get_changed() == True:
-      ret = self.tnfile.changed_dialog()
-      if ret == TnFile.CANCEL:
+      res = self.tnfile.save_changes_dialog()
+      if res == Gtk.ResponseType.YES:
         return
     self.tnfile.new_file()
     self.tnview.clear_changed()
-    self.set_title(APP_NAME)
+    self.set_title(TnDef.APP_NAME)
 
   def on_open(self, action, param):
     if self.tnview.get_changed() == True:
-      ret = self.tnfile.changed_dialog()
-      if ret == TnFile.CANCEL:
+      res = self.tnfile.save_changes_dialog()
+      if res == Gtk.ResponseType.YES:
         return
-    self.tnfile.open_file()
-    self.tnview.clear_changed()
-    self.set_title(APP_NAME + " - " + self.tnfile.get_filename())
+    res = self.tnfile.open_file()
+    if res == Gtk.ResponseType.OK:
+      self.tnview.clear_changed()
+      self.set_title(TnDef.APP_NAME + " - " + self.tnfile.get_filename())
 
   def on_save(self, action, param):
     if self.tnview.get_changed() == True:
-      ret = self.tnfile.save_file()
-      if ret == TnFile.CANCEL:
-        return
-      self.tnview.clear_changed()
-      self.set_title(APP_NAME + " - " + self.tnfile.get_filename())
+      res = self.tnfile.save_file()
+      if res == Gtk.ResponseType.OK:
+        self.tnview.clear_changed()
+        self.set_title(TnDef.APP_NAME + " - " + self.tnfile.get_filename())
 
   def on_save_as(self, action, param):
-    ret = self.tnfile.save_file_as()
-    if ret == TnFile.CANCEL:
-      return
-    self.tnview.clear_changed()
-    self.set_title(APP_NAME + " - " + self.tnfile.get_filename())
+    res = self.tnfile.save_file_as()
+    if res == Gtk.ResponseType.OK:
+      self.tnview.clear_changed()
+      self.set_title(TnDef.APP_NAME + " - " + self.tnfile.get_filename())
 
   def on_close(self, action, param):
-    if self.tnview.get_changed() == True:
-      ret = self.tnfile.changed_dialog()
-      if ret == TnFile.CANCEL:
-        return
-    self.tnfile.close_file()
-    self.tnview.clear_changed()
-    self.set_title(APP_NAME)
+    self.on_new(action, param)
 
   def on_add_after(self, action, param):
     self.tnview.edit_add_after()
@@ -211,7 +211,7 @@ class AppWin(Gtk.ApplicationWindow):
 class App(Gtk.Application):
 
   def __init__(self, *args, **kwargs):
-    super().__init__(*args, application_id="org.frstgt.treenote",
+    super(App, self).__init__(*args, application_id="org.frstgt.treenote",
                       flags=Gio.ApplicationFlags.HANDLES_OPEN,
                       **kwargs)
     self.window = None
@@ -228,13 +228,25 @@ class App(Gtk.Application):
 
   def do_activate(self):
     if not self.window:
-      self.window = AppWin(application=self, title=APP_NAME)
+      self.window = AppWin(application=self, title=TnDef.APP_NAME)
+      self.window.connect("delete-event", self.on_delete_event)
 
     self.window.present()
 
   def on_quit(self, action, param):
+    res = self.window.save_changes()
+    if res == Gtk.ResponseType.YES:
+      return
     self.quit()
+
+  def on_delete_event(self, widget, event):
+    res = self.window.save_changes()
+    if res == Gtk.ResponseType.YES:
+      return True
+    return False
 
 if __name__ == "__main__":
   app = App()
   app.run(sys.argv)
+
+# end of file
