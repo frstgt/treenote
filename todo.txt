@@ -2,5 +2,6 @@
   - コマンドラインでfileを渡して起動できない
   - delete時に確認を取るようにするか、undo/redoを実装する。
   - TnViewを委譲で実装しているが、継承で実装できないか。
+  - /usr/local/binにinstall/uninstallできるようにする。
 
 # end of file
