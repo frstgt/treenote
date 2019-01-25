@@ -1,0 +1,5 @@
+#!/bin/bash
+
+python ~/bin/treenote-v0.2/main.py
+
+# end of file
