@@ -1,16 +1,15 @@
 # TreeNote
 
-# description
+## description
 
 You can manage tree structured text with this application. 
 
-# usage 
+## usage 
 
   > python main.py
 
-  control-a: add after
-  control-b: add before
-  control-c: add child
+  control-a: add after  
+  control-b: add before  
+  control-c: add child  
   control-d: delete
 
-# end of file
