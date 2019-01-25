@@ -2,7 +2,7 @@
 
 BINDIR = ~/bin
 SRCDIR = treenote-v0.2
-SRC = TnDef.py TnView.py TnFile.py main.py
+SRC = AppDef.py AppView.py AppFile.py main.py
 BIN = treenote 
 
 install:

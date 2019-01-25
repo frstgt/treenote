@@ -6,7 +6,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import GLib, Gio, Gtk, Gdk, Pango
 
-import TnView, TnFile, TnDef
+import AppDef, AppView, AppFile
 
 # This would typically be its own file
 MENU_XML="""
@@ -89,164 +89,136 @@ MENU_XML="""
 class AppWin(Gtk.ApplicationWindow):
 
   def __init__(self, *args, **kwargs):
-    super(AppWin, self).__init__(*args, **kwargs)
+      super(AppWin, self).__init__(*args, **kwargs)
 
-    self.set_default_size(640, 480)
+      self.set_default_size(640, 480)
 
-    self.scrolledwin = Gtk.ScrolledWindow()
-    self.tnview = TnView.TnView(parent_window=self)
-    self.tnfile = TnFile.TnFile(parent_window=self,
-                                treestore=self.tnview.get_store())
+      self.scrolledwin = Gtk.ScrolledWindow()
 
-    self.scrolledwin.add(self.tnview.get_widget())
-    self.add(self.scrolledwin)
+      self.treenote = AppView.TreeNoteView(self)
+      self.file = AppFile.AppFile(self, self.treenote)
 
-    self.scrolledwin.show()
-    self.tnview.get_widget().show()
+      self.scrolledwin.add(self.treenote.get_widget())
+      self.add(self.scrolledwin)
 
-    #
+      self.scrolledwin.show()
+      self.treenote.get_widget().show()
 
-    action = Gio.SimpleAction.new("new", None)
-    action.connect("activate", self.on_new)
-    self.add_action(action)
+      #
 
-    action = Gio.SimpleAction.new("open", None)
-    action.connect("activate", self.on_open)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("new", None)
+      action.connect("activate", self.on_new)
+      self.add_action(action)
 
-    action = Gio.SimpleAction.new("save", None)
-    action.connect("activate", self.on_save)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("open", None)
+      action.connect("activate", self.on_open)
+      self.add_action(action)
 
-    action = Gio.SimpleAction.new("save_as", None)
-    action.connect("activate", self.on_save_as)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("save", None)
+      action.connect("activate", self.on_save)
+      self.add_action(action)
 
-    action = Gio.SimpleAction.new("close", None)
-    action.connect("activate", self.on_close)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("save_as", None)
+      action.connect("activate", self.on_save_as)
+      self.add_action(action)
 
-    action = Gio.SimpleAction.new("add_after", None)
-    action.connect("activate", self.on_add_after)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("close", None)
+      action.connect("activate", self.on_close)
+      self.add_action(action)
 
-    action = Gio.SimpleAction.new("add_before", None)
-    action.connect("activate", self.on_add_before)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("add_after", None)
+      action.connect("activate", self.on_add_after)
+      self.add_action(action)
 
-    action = Gio.SimpleAction.new("add_child", None)
-    action.connect("activate", self.on_add_child)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("add_before", None)
+      action.connect("activate", self.on_add_before)
+      self.add_action(action)
 
-    action = Gio.SimpleAction.new("delete", None)
-    action.connect("activate", self.on_delete)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("add_child", None)
+      action.connect("activate", self.on_add_child)
+      self.add_action(action)
 
-    action = Gio.SimpleAction.new("expand_all", None)
-    action.connect("activate", self.on_expand_all)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("delete", None)
+      action.connect("activate", self.on_delete)
+      self.add_action(action)
 
-    action = Gio.SimpleAction.new("fold_all", None)
-    action.connect("activate", self.on_fold_all)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("expand_all", None)
+      action.connect("activate", self.on_expand_all)
+      self.add_action(action)
 
-    #
+      action = Gio.SimpleAction.new("fold_all", None)
+      action.connect("activate", self.on_fold_all)
+      self.add_action(action)
+
+      #
 
   def save_changes(self):
-    res = Gtk.ResponseType.NO
-    if self.tnview.get_changed() == True:
-      res = self.tnfile.save_changes_dialog()
-    return res
-
+      self.file.save_changes()
   def on_new(self, action, param):
-    if self.tnview.get_changed() == True:
-      res = self.tnfile.save_changes_dialog()
-      if res == Gtk.ResponseType.YES:
-        return
-    self.tnfile.new_file()
-    self.tnview.clear_changed()
-    self.set_title(TnDef.APP_NAME)
-
+      self.file.new_file()
   def on_open(self, action, param):
-    if self.tnview.get_changed() == True:
-      res = self.tnfile.save_changes_dialog()
-      if res == Gtk.ResponseType.YES:
-        return
-    res = self.tnfile.open_file()
-    if res == Gtk.ResponseType.OK:
-      self.tnview.clear_changed()
-      self.set_title(TnDef.APP_NAME + " - " + self.tnfile.get_filename())
-
+      self.file.open_file()
   def on_save(self, action, param):
-    if self.tnview.get_changed() == True:
-      res = self.tnfile.save_file()
-      if res == Gtk.ResponseType.OK:
-        self.tnview.clear_changed()
-        self.set_title(TnDef.APP_NAME + " - " + self.tnfile.get_filename())
-
+      self.file.save_file()
   def on_save_as(self, action, param):
-    res = self.tnfile.save_file_as()
-    if res == Gtk.ResponseType.OK:
-      self.tnview.clear_changed()
-      self.set_title(TnDef.APP_NAME + " - " + self.tnfile.get_filename())
-
+      self.file.save_as_file()
   def on_close(self, action, param):
-    self.on_new(action, param)
+      self.file.close_file()
 
   def on_add_after(self, action, param):
-    self.tnview.edit_add_after()
+      self.treentoe.edit_add_after()
   def on_add_before(self, action, param):
-    self.tnview.edit_add_before()
+      self.treenote.edit_add_before()
   def on_add_child(self, action, param):
-    self.tnview.edit_add_child()
+      self.treenote.edit_add_child()
   def on_delete(self, action, param):
-    self.tnview.edit_delete()
+      self.treenote.edit_delete()
 
   def on_expand_all(self, action, param):
-    self.tnview.view_expand_all()
+      self.treenote.view_expand_all()
   def on_fold_all(self, action, param):
-    self.tnview.view_fold_all()
+      self.treenote.view_fold_all()
 
 
 class App(Gtk.Application):
 
   def __init__(self, *args, **kwargs):
-    super(App, self).__init__(*args, application_id="org.frstgt.treenote",
-                      flags=Gio.ApplicationFlags.HANDLES_OPEN,
-                      **kwargs)
-    self.window = None
+      super(App, self).__init__(*args, application_id="org.frstgt.treenote",
+                                flags=Gio.ApplicationFlags.HANDLES_OPEN,
+                                **kwargs)
+      self.window = None
 
   def do_startup(self):
-    Gtk.Application.do_startup(self)
+      Gtk.Application.do_startup(self)
     
-    action = Gio.SimpleAction.new("quit", None)
-    action.connect("activate", self.on_quit)
-    self.add_action(action)
+      action = Gio.SimpleAction.new("quit", None)
+      action.connect("activate", self.on_quit)
+      self.add_action(action)
 
-    builder = Gtk.Builder.new_from_string(MENU_XML, -1)
-    self.set_app_menu(builder.get_object("app-menu"))
+      builder = Gtk.Builder.new_from_string(MENU_XML, -1)
+      self.set_app_menu(builder.get_object("app-menu"))
 
   def do_activate(self):
-    if not self.window:
-      self.window = AppWin(application=self, title=TnDef.APP_NAME)
-      self.window.connect("delete-event", self.on_delete_event)
+      if not self.window:
+          self.window = AppWin(application=self, title=AppDef.APP_NAME)
+          self.window.connect("delete-event", self.on_delete_event)
 
-    self.window.present()
+      self.window.present()
 
   def on_quit(self, action, param):
-    res = self.window.save_changes()
-    if res == Gtk.ResponseType.YES:
-      return
-    self.quit()
+      res = self.window.save_changes()
+      if res == Gtk.ResponseType.YES:
+          return
+      self.quit()
 
   def on_delete_event(self, widget, event):
-    res = self.window.save_changes()
-    if res == Gtk.ResponseType.YES:
-      return True
-    return False
+      res = self.window.save_changes()
+      if res == Gtk.ResponseType.YES:
+          return True
+      return False
 
 if __name__ == "__main__":
-  app = App()
-  app.run(sys.argv)
+      app = App()
+      app.run(sys.argv)
 
 # end of file
